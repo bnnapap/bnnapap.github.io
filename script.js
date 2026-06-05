@@ -124,7 +124,7 @@ function getCurrentTime2hIndex(hour) {
     return 11;
 }
 
-// 动态生成秒、分、时、时辰、节气、星期、日期的旋转规则，半径宽度
+// 动态生成秒、分、时、时辰、节气、星期、日期的旋转规则
 (function generateRingStyles() {
     const style = document.createElement('style');
     let css = '';
@@ -138,6 +138,34 @@ function getCurrentTime2hIndex(hour) {
     style.textContent = css;
     document.head.appendChild(style);
 })();
+
+// ========== 自适应缩放核心函数 ==========
+function adaptCompassScale() {
+    const sumEl = document.getElementById('sum');
+    if (!sumEl) return;
+    // 原始罗盘最大环宽度 860px
+    const originalWidth = 860;
+    const originalHeight = 860;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    // 留白边距 (上下左右保留安全距离)
+    const scaleX = (windowWidth - 40) / originalWidth;
+    const scaleY = (windowHeight - 60) / originalHeight;
+    let scale = Math.min(scaleX, scaleY, 1.2);
+    scale = Math.max(scale, 0.4);
+    sumEl.style.transform = `scale(${scale})`;
+}
+
+let resizeTimer;
+window.addEventListener('resize', function() {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        adaptCompassScale();
+    }, 80);
+});
+window.addEventListener('orientationchange', function() {
+    setTimeout(adaptCompassScale, 30);
+});
 
 new Vue({
     el: '#sum',
@@ -239,6 +267,10 @@ new Vue({
         this.currentTime2hIndex = getCurrentTime2hIndex(new Date().getHours());
         this.startSmoothSecond();
         this.startDiscreteUpdate();
+        
+        // 调用自适应缩放
+        adaptCompassScale();
+        
         const yearDiv = document.getElementById('year');
         const infoPanel = document.getElementById('info-panel');
         yearDiv.addEventListener('mouseenter', () => { infoPanel.style.display = 'block'; });
@@ -257,6 +289,8 @@ new Vue({
     beforeDestroy() {
         if (this.rafId) cancelAnimationFrame(this.rafId);
         if (this.timer) clearInterval(this.timer);
+        window.removeEventListener('resize', adaptCompassScale);
+        window.removeEventListener('orientationchange', adaptCompassScale);
     },
     methods: {
         startSmoothSecond() {
@@ -282,22 +316,18 @@ new Vue({
                 const newTime2hIdx = getCurrentTime2hIndex(hour);
                 if (this.currentTime2hIndex !== newTime2hIdx) this.currentTime2hIndex = newTime2hIdx;
                 
-                // 计算当前节气索引
-                const nowMonth = m + 1;
-                const nowDay = d;
                 let solarIdx = 0;
                 for (let i = 0; i < this.solarDateRanges.length; i++) {
                     const sd = this.solarDateRanges[i];
-                    if (nowMonth > sd.month || (nowMonth === sd.month && nowDay >= sd.day)) {
+                    if (m+1 > sd.month || (m+1 === sd.month && d >= sd.day)) {
                         solarIdx = i;
                     } else {
                         break;
                     }
                 }
-                if (nowMonth < 2 || (nowMonth === 2 && nowDay < 4)) solarIdx = 23;
+                if (m+1 < 2 || (m+1 === 2 && d < 4)) solarIdx = 23;
                 this.currentSolarIndex = solarIdx;
                 
-                // 旋转节气环，使当前节气指向正右方
                 const solarAngle = (solarIdx * 15) - 112.5;
                 const solarDiv = document.getElementById('solar');
                 if (solarDiv) {
@@ -323,7 +353,6 @@ new Vue({
             updateDiscrete();
             this.timer = setInterval(updateDiscrete, 1000);
         },
-        // 节气提示框
         showSolarMsg(idx, event) {
             const tooltip = document.getElementById('solar-tooltip');
             if (tooltip) {
@@ -345,7 +374,6 @@ new Vue({
             const tooltip = document.getElementById('solar-tooltip');
             if (tooltip) tooltip.style.display = 'none';
         },
-        // 星期提示框
         showWeekMsg(idx, event) {
             const tooltip = document.getElementById('week-tooltip');
             if (tooltip) {
@@ -367,7 +395,6 @@ new Vue({
             const tooltip = document.getElementById('week-tooltip');
             if (tooltip) tooltip.style.display = 'none';
         },
-        // 时辰提示框
         showTime2hMsg(idx, event) {
             const tooltip = document.getElementById('time2h-tooltip');
             if (tooltip) {

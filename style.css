@@ -15,6 +15,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
 }
 
 #sum {
@@ -22,6 +25,9 @@ body {
     width: 730px;
     height: 730px;
     margin: 0 auto;
+    transform-origin: center center;
+    transition: transform 0.1s ease-out;
+    will-change: transform;
 }
 
 li {
@@ -52,7 +58,7 @@ li {
 #week   { width: 380px; height: 380px; }
 #data   { width: 310px; height: 310px; }
 #mouth  { width: 200px; height: 200px; }
-#year   { width: 140px; height: 140px; background: radial-gradient(circle, rgba(30,100,180,0.6), rgba(0,0,0,0.3)); backdrop-filter: blur(8px); box-shadow: 0 0 28px rgba(0,180,255,0.4); display: flex; align-items: center; justify-content: center; z-index: 70; }
+#year   { width: 140px; height: 140px; background: radial-gradient(circle, rgba(30,100,180,0.7), rgba(0,0,0,0.4)); backdrop-filter: blur(8px); box-shadow: 0 0 28px rgba(0,180,255,0.5); display: flex; align-items: center; justify-content: center; z-index: 70; border-radius: 50%; }
 
 .ring-inner ul {
     position: relative;
@@ -85,7 +91,6 @@ li {
     transition: all 0.2s;
 }
 
-/* 确保所有内环容器绝对居中于 #sum */
 #mouth, #solar, #data, #AP, #year, #week {
     position: absolute;
     left: 50%;
@@ -93,21 +98,23 @@ li {
     transform: translate(-50%, -50%);
 }
 
-/* ========== 月份环 ========== */
-#mouth ul {
+#mouth ul, #solar ul, #data ul, #week ul, #AP ul {
     position: relative;
     width: 0;
     height: 0;
     left: 50%;
     top: 50%;
 }
-#mouth li {
+
+#mouth li, #solar li, #data li, #week li, #AP li {
     position: absolute;
     width: 80px;
     height: 20px;
     margin-left: -40px;
     top: -10px;
 }
+
+/* 月份环偏移量 (半径方向) */
 #mouth ul li:nth-child(1) { transform: rotate(0deg) translateX(102px); }
 #mouth ul li:nth-child(2) { transform: rotate(30deg) translateX(102px); }
 #mouth ul li:nth-child(3) { transform: rotate(60deg) translateX(102px); }
@@ -121,73 +128,9 @@ li {
 #mouth ul li:nth-child(11) { transform: rotate(300deg) translateX(102px); }
 #mouth ul li:nth-child(12) { transform: rotate(330deg) translateX(102px); }
 
-/* ========== 日环 ========== */
-#data ul {
-    position: relative;
-    width: 0;
-    height: 0;
-    left: 50%;
-    top: 50%;
-}
-#data li {
-    position: absolute;
-    width: 80px;
-    height: 20px;
-    margin-left: -40px;
-    top: -10px;
-}
-
-/* ========== 星期环 ========== */
-#week ul {
-    position: relative;
-    width: 0;
-    height: 0;
-    left: 50%;
-    top: 50%;
-}
-#week li {
-    position: absolute;
-    width: 80px;
-    height: 20px;
-    margin-left: -40px;
-    top: -10px;
-}
-
-/* ========== 节气环 ========== */
-#solar ul {
-    position: relative;
-    width: 0;
-    height: 0;
-    left: 50%;
-    top: 50%;
-}
-#solar li {
-    position: absolute;
-    width: 80px;
-    height: 20px;
-    margin-left: -40px;
-    top: -10px;
-}
-
-/* ========== 上下午环 ========== */
-#AP ul {
-    position: relative;
-    width: 0;
-    height: 0;
-    left: 50%;
-    top: 50%;
-}
-#AP li {
-    position: absolute;
-    width: 80px;
-    height: 20px;
-    margin-left: -40px;
-    top: -10px;
-}
 #AP ul li:nth-child(1) { transform: rotate(0deg) translateX(299px); }
 #AP ul li:nth-child(2) { transform: rotate(180deg) translateX(299px); }
 
-/* 年份中心样式 */
 #year ul {
     position: relative;
     left: 0;
@@ -229,7 +172,6 @@ li {
     letter-spacing: 1px;
 }
 
-/* 所有高亮只改变颜色和大小，不添加位置偏移 */
 .active-second, .active-minute, .active-hour, .active-time2h,
 .active-month, .active-week, .active-day, .active-ap, .active-solar {
     color: #ffd700 !important;
@@ -260,7 +202,6 @@ li {
     z-index: 90;
 }
 
-/* 信息面板 */
 #info-panel {
     position: fixed;
     width: 260px;
@@ -306,7 +247,6 @@ li {
     font-size: 14px;
 }
 
-/* 提示框 */
 #solar-tooltip, #week-tooltip, #time2h-tooltip {
     position: fixed;
     width: 260px;
@@ -324,32 +264,12 @@ li {
     font-size: 14px;
     line-height: 1.5;
 }
-#solar-tooltip {
-    border-left: 4px solid #ffaa33;
-}
-#week-tooltip {
-    border-left: 4px solid #66ccff;
-    font-size: 16px;
-}
-#time2h-tooltip {
-    border-left: 4px solid #ffaa66;
-    font-size: 16px;
-}
+#solar-tooltip { border-left: 4px solid #ffaa33; }
+#week-tooltip { border-left: 4px solid #66ccff; font-size: 16px; }
+#time2h-tooltip { border-left: 4px solid #ffaa66; font-size: 16px; }
 
-/* 响应式 */
-@media (max-width: 1100px) {
-    #info-panel, #solar-tooltip, #week-tooltip, #time2h-tooltip {
-        width: 200px;
-        transform: scale(0.9);
-    }
-    #sum {
-        transform: scale(0.9);
-    }
-}
-
-/* ========== 个性签名模块样式 ========== */
+/* 个性签名模块 */
 @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
-
 .author-signature {
     position: fixed;
     bottom: 0;
@@ -395,7 +315,39 @@ li {
     font-family: monospace;
     text-transform: uppercase;
 }
-@media (max-width: 700px) {
-    .sig-name { font-size: 16px; }
-    .author-signature { padding: 5px 12px; margin: 0 10px 10px 0; }
+
+/* ========== 移动端字体 & 高亮优化 ========== */
+@media (max-width: 780px) {
+    .active-second, .active-minute, .active-hour, .active-time2h,
+    .active-month, .active-week, .active-day, .active-ap, .active-solar {
+        font-size: 18px !important;
+    }
+    #second .ring-inner li, #minute .ring-inner li {
+        font-size: 11px;
+    }
+    #hour .ring-inner li {
+        font-size: 16px;
+    }
+    #time2h .ring-inner li {
+        font-size: 14px;
+    }
+    .year-number {
+        font-size: 18px;
+    }
+    .ganzhi {
+        font-size: 12px;
+    }
+    .shengxiao {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 550px) {
+    .author-signature {
+        margin: 0 8px 12px 0;
+        padding: 4px 12px;
+    }
+    .sig-name {
+        font-size: 16px;
+    }
 }
