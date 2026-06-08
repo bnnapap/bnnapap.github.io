@@ -230,13 +230,32 @@ new Vue({
             '戌时 19:00 - 21:00',
             '亥时 21:00 - 23:00'
         ],
-        solarDateRanges: [
-            { month: 2, day: 4 }, { month: 2, day: 19 }, { month: 3, day: 5 }, { month: 3, day: 20 },
-            { month: 4, day: 4 }, { month: 4, day: 20 }, { month: 5, day: 5 }, { month: 5, day: 21 },
-            { month: 6, day: 5 }, { month: 6, day: 21 }, { month: 7, day: 7 }, { month: 7, day: 22 },
-            { month: 8, day: 7 }, { month: 8, day: 23 }, { month: 9, day: 7 }, { month: 9, day: 22 },
-            { month: 10, day: 8 }, { month: 10, day: 23 }, { month: 11, day: 7 }, { month: 11, day: 22 },
-            { month: 12, day: 7 }, { month: 12, day: 21 }, { month: 1, day: 5 }, { month: 1, day: 20 }
+        // 节气日期数组（月, 日），顺序与 solarTerms 一致，用于连续旋转计算
+        solarDates: [
+            { month: 2, day: 4 },  // 立春
+            { month: 2, day: 19 }, // 雨水
+            { month: 3, day: 5 },  // 惊蛰
+            { month: 3, day: 20 }, // 春分
+            { month: 4, day: 4 },  // 清明
+            { month: 4, day: 20 }, // 谷雨
+            { month: 5, day: 5 },  // 立夏
+            { month: 5, day: 21 }, // 小满
+            { month: 6, day: 5 },  // 芒种
+            { month: 6, day: 21 }, // 夏至
+            { month: 7, day: 7 },  // 小暑
+            { month: 7, day: 22 }, // 大暑
+            { month: 8, day: 7 },  // 立秋
+            { month: 8, day: 23 }, // 处暑
+            { month: 9, day: 7 },  // 白露
+            { month: 9, day: 22 }, // 秋分
+            { month: 10, day: 8 }, // 寒露
+            { month: 10, day: 23 },// 霜降
+            { month: 11, day: 7 }, // 立冬
+            { month: 11, day: 22 },// 小雪
+            { month: 12, day: 7 }, // 大雪
+            { month: 12, day: 21 },// 冬至
+            { month: 1, day: 5 },  // 小寒
+            { month: 1, day: 20 }  // 大寒
         ]
     },
     computed: {
@@ -306,53 +325,98 @@ new Vue({
             this.rafId = requestAnimationFrame(updateSecond);
         },
         startDiscreteUpdate() {
-            const updateDiscrete = () => {
-                const now = new Date();
-                const sec = now.getSeconds(), min = now.getMinutes(), hour = now.getHours();
-                const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-                this.currentSecond = sec; this.currentMinute = min; this.currentHour = hour;
-                this.currentYear = y; this.currentMonth = m; this.currentDay = d;
-                this.currentAP = hour >= 12 ? 1 : 0;
-                const newTime2hIdx = getCurrentTime2hIndex(hour);
-                if (this.currentTime2hIndex !== newTime2hIdx) this.currentTime2hIndex = newTime2hIdx;
-                
-                let solarIdx = 0;
-                for (let i = 0; i < this.solarDateRanges.length; i++) {
-                    const sd = this.solarDateRanges[i];
-                    if (m+1 > sd.month || (m+1 === sd.month && d >= sd.day)) {
-                        solarIdx = i;
-                    } else {
-                        break;
-                    }
-                }
-                if (m+1 < 2 || (m+1 === 2 && d < 4)) solarIdx = 23;
-                this.currentSolarIndex = solarIdx;
-                
-                const solarAngle = (solarIdx * 15) - 112.5;
-                const solarDiv = document.getElementById('solar');
-                if (solarDiv) {
-                    solarDiv.style.transform = `translate(-50%, -50%) rotate(${-solarAngle}deg)`;
-                }
-                
-                const minRot = document.getElementById('minuteRotator');
-                if (minRot) minRot.style.transform = `rotate(${-min * 6}deg)`;
-                const hourIdx = hour % 12 === 0 ? 11 : (hour % 12) - 1;
-                const hourRot = document.getElementById('hourRotator');
-                if (hourRot) hourRot.style.transform = `rotate(${-hourIdx * 30}deg)`;
-                const time2hRot = document.getElementById('time2hRotator');
-                if (time2hRot) time2hRot.style.transform = `rotate(${-this.currentTime2hIndex * 30}deg)`;
-                const weekDiv = document.getElementById('week');
-                if (weekDiv) weekDiv.style.transform = `translate(-50%, -50%) rotate(${-this.currentWeekdayIndex * (360/7)}deg)`;
-                const mouthDiv = document.getElementById('mouth');
-                if (mouthDiv) mouthDiv.style.transform = `translate(-50%, -50%) rotate(${-m * 30}deg)`;
-                const dataDiv = document.getElementById('data');
-                if (dataDiv) dataDiv.style.transform = `translate(-50%, -50%) rotate(${-(d-1) * (360/31)}deg)`;
-                const apDiv = document.getElementById('AP');
-                if (apDiv) apDiv.style.transform = `translate(-50%, -50%) rotate(${hour >= 12 ? -180 : 0}deg)`;
-            };
-            updateDiscrete();
-            this.timer = setInterval(updateDiscrete, 1000);
-        },
+    const updateDiscrete = () => {
+        const now = new Date();
+        const sec = now.getSeconds(), min = now.getMinutes(), hour = now.getHours();
+        const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+        this.currentSecond = sec; this.currentMinute = min; this.currentHour = hour;
+        this.currentYear = y; this.currentMonth = m; this.currentDay = d;
+        this.currentAP = hour >= 12 ? 1 : 0;
+        const newTime2hIdx = getCurrentTime2hIndex(hour);
+        if (this.currentTime2hIndex !== newTime2hIdx) this.currentTime2hIndex = newTime2hIdx;
+        
+        // ---------- 节气环连续旋转逻辑 ----------
+        const getDayOfYear = (month, day) => {
+            const monthDays = [31,28,31,30,31,30,31,31,30,31,30,31];
+            let doy = 0;
+            for (let i = 0; i < month; i++) doy += monthDays[i];
+            doy += day;
+            return doy;
+        };
+        const nowMonthNum = m + 1;
+        const nowDay = d;
+        let nowDOY = getDayOfYear(nowMonthNum - 1, nowDay);
+        
+        const solarDOYs = [];
+        const solarAngles = [];
+        for (let i = 0; i < this.solarDates.length; i++) {
+            const sd = this.solarDates[i];
+            let monthIdx = sd.month - 1;
+            let doy = getDayOfYear(monthIdx, sd.day);
+            if (i >= 22) { // 小寒、大寒属于下一年初，偏移到365天后
+                doy += 365;
+            }
+            solarDOYs.push(doy);
+            solarAngles.push(i * 15 - 112.5);
+        }
+        let currentDOY = nowDOY;
+        if (nowMonthNum < 2 || (nowMonthNum === 2 && nowDay < 4)) {
+            currentDOY += 365;
+        }
+        let nextIdx = 0;
+        for (let i = 0; i < solarDOYs.length; i++) {
+            if (solarDOYs[i] > currentDOY) {
+                nextIdx = i;
+                break;
+            }
+        }
+        let prevIdx = (nextIdx - 1 + solarDOYs.length) % solarDOYs.length;
+        const prevDOY = solarDOYs[prevIdx];
+        const nextDOY = solarDOYs[nextIdx];
+        let prevAngle = solarAngles[prevIdx];
+        let nextAngle = solarAngles[nextIdx];
+        let angleRange = nextAngle - prevAngle;
+        if (angleRange < 0) angleRange += 360;
+        let t = (currentDOY - prevDOY) / (nextDOY - prevDOY);
+        let currentAngle = prevAngle + t * angleRange;
+        if (currentAngle > 360) currentAngle -= 360;
+        
+        const solarDiv = document.getElementById('solar');
+        if (solarDiv) {
+            solarDiv.style.transform = `translate(-50%, -50%) rotate(${-currentAngle}deg)`;
+        }
+        
+        // ---------- 高亮逻辑：仅当天精确匹配节气时才高亮 ----------
+        let highlightIdx = -1;
+        for (let i = 0; i < this.solarDates.length; i++) {
+            const sd = this.solarDates[i];
+            if (sd.month === nowMonthNum && sd.day === nowDay) {
+                highlightIdx = i;
+                break;
+            }
+        }
+        this.currentSolarIndex = highlightIdx;
+        
+        // 其他环旋转不变
+        const minRot = document.getElementById('minuteRotator');
+        if (minRot) minRot.style.transform = `rotate(${-min * 6}deg)`;
+        const hourIdx = hour % 12 === 0 ? 11 : (hour % 12) - 1;
+        const hourRot = document.getElementById('hourRotator');
+        if (hourRot) hourRot.style.transform = `rotate(${-hourIdx * 30}deg)`;
+        const time2hRot = document.getElementById('time2hRotator');
+        if (time2hRot) time2hRot.style.transform = `rotate(${-this.currentTime2hIndex * 30}deg)`;
+        const weekDiv = document.getElementById('week');
+        if (weekDiv) weekDiv.style.transform = `translate(-50%, -50%) rotate(${-this.currentWeekdayIndex * (360/7)}deg)`;
+        const mouthDiv = document.getElementById('mouth');
+        if (mouthDiv) mouthDiv.style.transform = `translate(-50%, -50%) rotate(${-m * 30}deg)`;
+        const dataDiv = document.getElementById('data');
+        if (dataDiv) dataDiv.style.transform = `translate(-50%, -50%) rotate(${-(d-1) * (360/31)}deg)`;
+        const apDiv = document.getElementById('AP');
+        if (apDiv) apDiv.style.transform = `translate(-50%, -50%) rotate(${hour >= 12 ? -180 : 0}deg)`;
+    };
+    updateDiscrete();
+    this.timer = setInterval(updateDiscrete, 1000);
+},
         showSolarMsg(idx, event) {
             const tooltip = document.getElementById('solar-tooltip');
             if (tooltip) {

@@ -351,3 +351,28 @@ li {
         font-size: 16px;
     }
 }
+
+/* ========== 消除抖动：开启独立合成层 ========== */
+#secondRotator, #minuteRotator, #hourRotator, #time2hRotator,
+#week, #mouth, #data, #AP, #solar,
+.ring-outer, .ring-inner {
+    will-change: transform !important;
+    backface-visibility: hidden !important;
+    transform-style: preserve-3d !important;
+}
+
+/* 禁用所有无关过渡 */
+.ring-outer, .ring-inner, 
+#secondRotator, #minuteRotator, #hourRotator, #time2hRotator {
+    transition: none !important;
+}
+
+/* 仅保留文字悬浮过渡 */
+.solar-item, .week-item, .time2h-item {
+    transition: color 0.2s, text-shadow 0.2s !important;
+}
+
+/* 整体缩放容器也开启独立层 */
+#sum {
+    will-change: transform;
+}
