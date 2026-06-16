@@ -71,7 +71,7 @@ li {
 }
 
 #second .ring-inner li { width: 80px; margin-left: -40px; height: 20px; top: -7px; font-size: 13px; }
-#minute .ring-inner li { width: 80px; margin-left: -42px; height: 20px; top: -10px; font-size: 13px; }
+#minute .ring-inner li { width: 80px; margin-left: -38px; height: 20px; top: -10px; font-size: 13px; }
 #hour .ring-inner li   { width: 80px; margin-left: -40px; height: 20px; top: -14px; font-size: 18px; font-weight: bold; }
 #time2h .ring-inner li {
     width: 80px;
