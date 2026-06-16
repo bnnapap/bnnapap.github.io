@@ -124,7 +124,7 @@ function getCurrentTime2hIndex(hour) {
     return 11;
 }
 
-// 动态生成秒、分、时、时辰、节气、星期、日期的旋转规则
+// 动态生成秒、分、时、时辰、节气、星期、日期的旋转规则，半径宽度
 (function generateRingStyles() {
     const style = document.createElement('style');
     let css = '';
@@ -138,34 +138,6 @@ function getCurrentTime2hIndex(hour) {
     style.textContent = css;
     document.head.appendChild(style);
 })();
-
-// ========== 自适应缩放核心函数 ==========
-function adaptCompassScale() {
-    const sumEl = document.getElementById('sum');
-    if (!sumEl) return;
-    // 原始罗盘最大环宽度 860px
-    const originalWidth = 860;
-    const originalHeight = 860;
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    // 留白边距 (上下左右保留安全距离)
-    const scaleX = (windowWidth - 40) / originalWidth;
-    const scaleY = (windowHeight - 60) / originalHeight;
-    let scale = Math.min(scaleX, scaleY, 1.2);
-    scale = Math.max(scale, 0.4);
-    sumEl.style.transform = `scale(${scale})`;
-}
-
-let resizeTimer;
-window.addEventListener('resize', function() {
-    if (resizeTimer) clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-        adaptCompassScale();
-    }, 80);
-});
-window.addEventListener('orientationchange', function() {
-    setTimeout(adaptCompassScale, 30);
-});
 
 new Vue({
     el: '#sum',
@@ -230,32 +202,13 @@ new Vue({
             '戌时 19:00 - 21:00',
             '亥时 21:00 - 23:00'
         ],
-        // 节气日期数组（月, 日），顺序与 solarTerms 一致，用于连续旋转计算
-        solarDates: [
-            { month: 2, day: 4 },  // 立春
-            { month: 2, day: 19 }, // 雨水
-            { month: 3, day: 5 },  // 惊蛰
-            { month: 3, day: 20 }, // 春分
-            { month: 4, day: 4 },  // 清明
-            { month: 4, day: 20 }, // 谷雨
-            { month: 5, day: 5 },  // 立夏
-            { month: 5, day: 21 }, // 小满
-            { month: 6, day: 5 },  // 芒种
-            { month: 6, day: 21 }, // 夏至
-            { month: 7, day: 7 },  // 小暑
-            { month: 7, day: 22 }, // 大暑
-            { month: 8, day: 7 },  // 立秋
-            { month: 8, day: 23 }, // 处暑
-            { month: 9, day: 7 },  // 白露
-            { month: 9, day: 22 }, // 秋分
-            { month: 10, day: 8 }, // 寒露
-            { month: 10, day: 23 },// 霜降
-            { month: 11, day: 7 }, // 立冬
-            { month: 11, day: 22 },// 小雪
-            { month: 12, day: 7 }, // 大雪
-            { month: 12, day: 21 },// 冬至
-            { month: 1, day: 5 },  // 小寒
-            { month: 1, day: 20 }  // 大寒
+        solarDateRanges: [
+            { month: 2, day: 4 }, { month: 2, day: 19 }, { month: 3, day: 5 }, { month: 3, day: 20 },
+            { month: 4, day: 4 }, { month: 4, day: 20 }, { month: 5, day: 5 }, { month: 5, day: 21 },
+            { month: 6, day: 5 }, { month: 6, day: 21 }, { month: 7, day: 7 }, { month: 7, day: 22 },
+            { month: 8, day: 7 }, { month: 8, day: 23 }, { month: 9, day: 7 }, { month: 9, day: 22 },
+            { month: 10, day: 8 }, { month: 10, day: 23 }, { month: 11, day: 7 }, { month: 11, day: 22 },
+            { month: 12, day: 7 }, { month: 12, day: 21 }, { month: 1, day: 5 }, { month: 1, day: 20 }
         ]
     },
     computed: {
@@ -286,10 +239,46 @@ new Vue({
         this.currentTime2hIndex = getCurrentTime2hIndex(new Date().getHours());
         this.startSmoothSecond();
         this.startDiscreteUpdate();
-        
-        // 调用自适应缩放
-        adaptCompassScale();
-        
+
+// ========== 自适应：直接修改环尺寸，避免 transform 缩放 ==========
+const adaptSize = () => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // 原始设计尺寸（最大环 860px）
+    const baseSize = 860;
+    const scaleX = (w - 40) / baseSize;
+    const scaleY = (h - 60) / baseSize;
+    let scale = Math.min(scaleX, scaleY, 1.2);
+    scale = Math.max(scale, 0.35);
+    
+    // 获取所有环容器，按比例调整尺寸
+    const rings = ['second', 'minute', 'hour', 'time2h', 'AP', 'solar', 'week', 'data', 'mouth', 'year'];
+    const baseSizes = {
+        second: 860, minute: 740, hour: 620, time2h: 680,
+        AP: 550, solar: 470, week: 380, data: 310, mouth: 200, year: 140
+    };
+    rings.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const base = baseSizes[id];
+            if (base) {
+                const newSize = base * scale;
+                el.style.width = newSize + 'px';
+                el.style.height = newSize + 'px';
+            }
+        }
+    });
+};
+adaptSize();
+window.addEventListener('resize', () => {
+    clearTimeout(window._resizeTimer);
+    window._resizeTimer = setTimeout(adaptSize, 150);
+});
+window.addEventListener('orientationchange', () => {
+    setTimeout(adaptSize, 300);
+});
+
+
         const yearDiv = document.getElementById('year');
         const infoPanel = document.getElementById('info-panel');
         yearDiv.addEventListener('mouseenter', () => { infoPanel.style.display = 'block'; });
@@ -308,8 +297,6 @@ new Vue({
     beforeDestroy() {
         if (this.rafId) cancelAnimationFrame(this.rafId);
         if (this.timer) clearInterval(this.timer);
-        window.removeEventListener('resize', adaptCompassScale);
-        window.removeEventListener('orientationchange', adaptCompassScale);
     },
     methods: {
         startSmoothSecond() {
@@ -335,34 +322,29 @@ new Vue({
         const newTime2hIdx = getCurrentTime2hIndex(hour);
         if (this.currentTime2hIndex !== newTime2hIdx) this.currentTime2hIndex = newTime2hIdx;
         
-        // ---------- 节气环连续旋转逻辑 ----------
+        // ========== 节气环连续旋转逻辑（平滑插值）==========
         const getDayOfYear = (month, day) => {
             const monthDays = [31,28,31,30,31,30,31,31,30,31,30,31];
             let doy = 0;
-            for (let i = 0; i < month; i++) doy += monthDays[i];
+            for (let i = 0; i < month-1; i++) doy += monthDays[i];
             doy += day;
             return doy;
         };
         const nowMonthNum = m + 1;
         const nowDay = d;
-        let nowDOY = getDayOfYear(nowMonthNum - 1, nowDay);
+        let currentDOY = getDayOfYear(nowMonthNum, nowDay);
         
         const solarDOYs = [];
         const solarAngles = [];
-        for (let i = 0; i < this.solarDates.length; i++) {
-            const sd = this.solarDates[i];
-            let monthIdx = sd.month - 1;
-            let doy = getDayOfYear(monthIdx, sd.day);
-            if (i >= 22) { // 小寒、大寒属于下一年初，偏移到365天后
-                doy += 365;
-            }
+        for (let i = 0; i < this.solarDateRanges.length; i++) {
+            const sd = this.solarDateRanges[i];
+            let doy = getDayOfYear(sd.month, sd.day);
+            if (i >= 22) doy += 365;
             solarDOYs.push(doy);
             solarAngles.push(i * 15 - 112.5);
         }
-        let currentDOY = nowDOY;
-        if (nowMonthNum < 2 || (nowMonthNum === 2 && nowDay < 4)) {
-            currentDOY += 365;
-        }
+        if (currentDOY < 35) currentDOY += 365;
+        
         let nextIdx = 0;
         for (let i = 0; i < solarDOYs.length; i++) {
             if (solarDOYs[i] > currentDOY) {
@@ -386,10 +368,10 @@ new Vue({
             solarDiv.style.transform = `translate(-50%, -50%) rotate(${-currentAngle}deg)`;
         }
         
-        // ---------- 高亮逻辑：仅当天精确匹配节气时才高亮 ----------
+        // ========== 高亮逻辑：仅当天精确匹配节气时才高亮 ==========
         let highlightIdx = -1;
-        for (let i = 0; i < this.solarDates.length; i++) {
-            const sd = this.solarDates[i];
+        for (let i = 0; i < this.solarDateRanges.length; i++) {
+            const sd = this.solarDateRanges[i];
             if (sd.month === nowMonthNum && sd.day === nowDay) {
                 highlightIdx = i;
                 break;
@@ -417,6 +399,7 @@ new Vue({
     updateDiscrete();
     this.timer = setInterval(updateDiscrete, 1000);
 },
+        // 节气提示框
         showSolarMsg(idx, event) {
             const tooltip = document.getElementById('solar-tooltip');
             if (tooltip) {
@@ -438,6 +421,7 @@ new Vue({
             const tooltip = document.getElementById('solar-tooltip');
             if (tooltip) tooltip.style.display = 'none';
         },
+        // 星期提示框
         showWeekMsg(idx, event) {
             const tooltip = document.getElementById('week-tooltip');
             if (tooltip) {
@@ -459,6 +443,7 @@ new Vue({
             const tooltip = document.getElementById('week-tooltip');
             if (tooltip) tooltip.style.display = 'none';
         },
+        // 时辰提示框
         showTime2hMsg(idx, event) {
             const tooltip = document.getElementById('time2h-tooltip');
             if (tooltip) {
